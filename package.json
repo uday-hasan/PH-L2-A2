@@ -1,0 +1,36 @@
+{
+  "name": "ph-l2-a2",
+  "version": "1.0.0",
+  "description": "Next Level Web Development Batch 6 Assigment 2",
+  "homepage": "https://github.com/uday-hasan/PH-L2-A2#readme",
+  "bugs": {
+    "url": "https://github.com/uday-hasan/PH-L2-A2/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/uday-hasan/PH-L2-A2.git"
+  },
+  "license": "ISC",
+  "author": "Uday Hasan",
+  "main": "server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.2.3",
+    "express": "^5.2.1",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^6.1.1",
+    "@types/express": "^5.0.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.10.1",
+    "@types/pg": "^8.15.6",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
