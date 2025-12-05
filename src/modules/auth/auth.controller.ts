@@ -6,14 +6,14 @@ export const signup = async (req: Request, res: Response) => {
     const payload = req.body;
     const result = await authService.signup(payload);
     res.status(result.status).json({
-      message: result.message,
       success: result.success,
+      message: result.message,
       data: result.data || null,
     });
   } catch (error) {
     res.status(500).json({
-      message: "Internal server error",
       success: false,
+      message: "Internal server error",
       data: null,
     });
   }
@@ -24,14 +24,14 @@ export const signin = async (req: Request, res: Response) => {
     const result = await authService.signin(payload);
     req.user = result.data?.user;
     res.status(result.status).json({
-      message: result.message,
       success: result.success,
+      message: result.message,
       data: result.data || null,
     });
   } catch (error) {
     res.status(500).json({
-      message: "Internal server error",
       success: false,
+      message: "Internal server error",
       data: null,
     });
   }
