@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   addVehicle,
+  deleteVehicle,
   getAllVehicle,
   getVehicle,
   updateVehicle,
@@ -19,6 +20,10 @@ vehicleRoute.put(
   checkPermission(["admin"]),
   updateVehicle
 );
-// vehicleRoute.delete("/:userId", signin);
-
+vehicleRoute.delete(
+  "/:vehicleId",
+  authMiddleware,
+  checkPermission(["admin"]),
+  deleteVehicle
+);
 export default vehicleRoute;
