@@ -22,7 +22,7 @@ export const authMiddleware = async (
     if (typeof decoded === "object" && "email" in decoded) {
       const result = await pool.query(
         `
-                SELECT name, email, phone, role FROM Users where email = $1
+                SELECT id, name, email, phone, role FROM Users where email = $1
             `,
         [decoded.email]
       );
@@ -41,6 +41,7 @@ export const authMiddleware = async (
       });
     }
   } catch (error) {
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
