@@ -4,16 +4,13 @@ import { userService } from "./user.service";
 export const getAllUsers = async (req: Request, res: Response) => {
   try {
     const result = await userService.getAllUsers();
-    res.status(result.status).json({
-      success: result.success,
-      message: result.message,
-      data: result.data || null,
-    });
+    const { status, ...rest } = result;
+    res.status(status).json(rest);
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Internal server error",
-      data: null,
+      errors: "Something went wrong while getting all users",
     });
   }
 };
@@ -23,16 +20,13 @@ export const updateUser = async (req: Request, res: Response) => {
     const payload = req.body;
     const userId = Number(req.params.userId);
     const result = await userService.updateUser(payload, userId);
-    res.status(result.status).json({
-      success: result.success,
-      message: result.message,
-      data: result.data || null,
-    });
+    const { status, ...rest } = result;
+    res.status(status).json(rest);
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Internal server error",
-      data: null,
+      errors: "Something went wrong while updating",
     });
   }
 };
@@ -41,16 +35,13 @@ export const getUser = async (req: Request, res: Response) => {
   try {
     const userId = Number(req.params.userId);
     const result = await userService.getUser(userId);
-    res.status(result.status).json({
-      success: result.success,
-      message: result.message,
-      data: result.data || null,
-    });
+    const { status, ...rest } = result;
+    res.status(status).json(rest);
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Internal server error",
-      data: null,
+      errors: "Something went wrong while getting user details",
     });
   }
 };
@@ -59,14 +50,13 @@ export const deleteUser = async (req: Request, res: Response) => {
   try {
     const userId = Number(req.params.userId);
     const result = await userService.deleteUser(userId);
-    res.status(result.status).json({
-      success: result.success,
-      message: result.message,
-    });
+    const { status, ...rest } = result;
+    res.status(status).json(rest);
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Internal server error",
+      errors: "Something went wrong while deleting user.",
     });
   }
 };

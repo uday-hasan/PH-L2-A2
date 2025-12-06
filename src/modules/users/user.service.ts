@@ -17,7 +17,7 @@ const getAllUsers = async () => {
       status: 500,
       success: false,
       message: "Internal server error",
-      data: null,
+      errors: "Something went wrong when getting all users",
     };
   }
 };
@@ -35,6 +35,7 @@ const updateUser = async (payload: Record<string, unknown>, userId: number) => {
         success: false,
         status: 404,
         message: "User not found.",
+        errors: "User not found for id: " + userId,
       };
     }
     const existingUser = existingUserQuery.rows[0];
@@ -45,9 +46,10 @@ const updateUser = async (payload: Record<string, unknown>, userId: number) => {
     const email = payload.email || existingUser.email;
     if (!USER_TYPE.includes(role as "admin" | "customer")) {
       return {
-        message: "Role can be only admin or customer",
-        status: 400,
         success: false,
+        message: "Invalid role.",
+        errors: "Role can be only admin or customer",
+        status: 400,
       };
     }
 
@@ -62,6 +64,7 @@ const updateUser = async (payload: Record<string, unknown>, userId: number) => {
         status: 400,
         success: false,
         message: "Failed to update",
+        errors: "Something went wrong when updating the user",
       };
     }
     delete result.rows[0].password;
@@ -76,6 +79,7 @@ const updateUser = async (payload: Record<string, unknown>, userId: number) => {
       return {
         success: false,
         message: "Email already exists",
+        errors: "Try another email",
         status: 400,
       };
     }
@@ -83,7 +87,7 @@ const updateUser = async (payload: Record<string, unknown>, userId: number) => {
       status: 500,
       success: false,
       message: "Internal server error",
-      data: null,
+      errors: "Something went wrong while updating user",
     };
   }
 };
@@ -99,8 +103,8 @@ const getUser = async (userId: number) => {
   return {
     success: true,
     status: 200,
-    data: result.rows[0],
     message: "User found",
+    data: result.rows[0],
   };
 };
 
@@ -117,6 +121,8 @@ const deleteUser = async (userId: number) => {
         status: 400,
         success: false,
         message: "This user has active booking.",
+        errors:
+          "Failed to delete because this user already have active booking",
       };
     }
 
@@ -136,6 +142,7 @@ const deleteUser = async (userId: number) => {
       return {
         success: false,
         message: "User not found",
+        errors: "User not found for delete",
         status: 400,
       };
     }
@@ -143,6 +150,7 @@ const deleteUser = async (userId: number) => {
     return {
       success: false,
       message: "Internal server error",
+      errors: "Something went wrong while deleting",
       status: 500,
     };
   }
