@@ -55,21 +55,18 @@ export const getUser = async (req: Request, res: Response) => {
   }
 };
 
-// export const signin = async (req: Request, res: Response) => {
-//   try {
-//     const payload = req.body;
-//     const result = await authService.signin(payload);
-//     req.user = result.data?.user;
-//     res.status(result.status).json({
-//       success: result.success,
-//       message: result.message,
-//       data: result.data || null,
-//     });
-//   } catch (error) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Internal server error",
-//       data: null,
-//     });
-//   }
-// };
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    const userId = Number(req.params.userId);
+    const result = await userService.deleteUser(userId);
+    res.status(result.status).json({
+      success: result.success,
+      message: result.message,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};

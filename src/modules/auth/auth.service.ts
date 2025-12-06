@@ -12,25 +12,27 @@ const signup = async (payload: Record<string, unknown>) => {
       !payload?.phone ||
       !payload?.role
     ) {
-      console.log(payload);
       return {
         success: false,
-        message: "Name, Email, Password, Phone, Role is required.",
+        message: "All fields are required",
         status: 400,
+        errors: "Name, Email, Password, Phone, Role is required.",
       };
     }
     const { name, email, password, phone, role } = payload;
     if ((password as string).length < 6) {
       return {
         success: false,
-        message: "Password must contain 6 charecters",
+        errors: "Password must contain 6 charecters",
         status: 400,
+        message: "Invalid password format",
       };
     }
     if (!USER_TYPE.includes(role as "admin" | "customer")) {
       return {
         success: false,
-        message: "Role must be either admin or customer",
+        errors: "Role must be either admin or customer",
+        message: "Invalid role",
         status: 400,
       };
     }
@@ -56,13 +58,15 @@ const signup = async (payload: Record<string, unknown>) => {
     if (error.code === "23505" && error.constraint === "users_email_key") {
       return {
         success: false,
-        message: "Email already exists",
+        errors: "Email already exists",
+        message: "Faild to create account",
         status: 400,
       };
     }
     return {
       success: false,
-      message: "Internal server error",
+      errors: "Internal server error",
+      message: "Something went wrong when creating user",
       status: 500,
     };
   }
@@ -74,7 +78,8 @@ const signin = async (payload: Record<string, unknown>) => {
       return {
         success: false,
         status: 400,
-        message: "Email and password are required.",
+        errors: "Email and password are required.",
+        message: "All fields are required.",
       };
     }
     const { email, password } = payload;
@@ -89,6 +94,7 @@ const signin = async (payload: Record<string, unknown>) => {
         success: false,
         status: 404,
         message: "User not found.",
+        errors: `User not found for the ${email} account.`,
       };
     }
     const user = findUser.rows[0];
@@ -101,6 +107,7 @@ const signin = async (payload: Record<string, unknown>) => {
         success: false,
         status: 401,
         message: "Invalid credentials.",
+        errors: "Please provide valid account information",
       };
     }
 
@@ -124,6 +131,7 @@ const signin = async (payload: Record<string, unknown>) => {
       success: false,
       message: "Internal server error",
       status: 500,
+      errors: "Something went wrong when logging in.",
     };
   }
 };

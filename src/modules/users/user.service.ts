@@ -1,7 +1,5 @@
 import { USER_TYPE } from "../../constant/index";
-import bcrypt from "bcryptjs";
 import { pool } from "../../db/connectDB";
-import { generateToken } from "../../utils/jwt";
 
 const getAllUsers = async () => {
   try {
@@ -106,8 +104,53 @@ const getUser = async (userId: number) => {
   };
 };
 
+const deleteUser = async (userId: number) => {
+  try {
+    const getActiveBooking = await pool.query(
+      `
+        SELECT * FROM Bookings WHERE status = $1 AND customer_id=$2
+      `,
+      ["active", userId]
+    );
+    if (getActiveBooking.rows.length > 0) {
+      return {
+        status: 400,
+        success: false,
+        message: "This user has active booking.",
+      };
+    }
+
+    const result = await pool.query(
+      `
+        DELETE FROM Users WHERE id=$1
+      `,
+      [userId]
+    );
+    if (result.rowCount) {
+      return {
+        success: true,
+        message: "User deleted successfully",
+        status: 200,
+      };
+    } else {
+      return {
+        success: false,
+        message: "User not found",
+        status: 400,
+      };
+    }
+  } catch (error) {
+    return {
+      success: false,
+      message: "Internal server error",
+      status: 500,
+    };
+  }
+};
+
 export const userService = {
   getAllUsers,
   updateUser,
   getUser,
+  deleteUser,
 };

@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { getAllUsers, getUser, updateUser } from "./user.controller";
+import {
+  deleteUser,
+  getAllUsers,
+  getUser,
+  updateUser,
+} from "./user.controller";
 import { authMiddleware } from "../../middleware/auth.middleware";
 import { checkPermission } from "../../middleware/checkpermission.middleware";
 
@@ -18,6 +23,11 @@ userRoute.put(
   checkPermission(["admin", "customer"], "user"),
   updateUser
 );
-// userRoute.delete("/:userId", signin);
+userRoute.delete(
+  "/:userId",
+  authMiddleware,
+  checkPermission(["admin"]),
+  deleteUser
+);
 
 export default userRoute;

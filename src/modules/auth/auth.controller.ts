@@ -5,16 +5,19 @@ export const signup = async (req: Request, res: Response) => {
   try {
     const payload = req.body;
     const result = await authService.signup(payload);
+    const data = result.data
+      ? { data: result.data }
+      : { errors: result.errors };
     res.status(result.status).json({
       success: result.success,
       message: result.message,
-      data: result.data || null,
+      ...data,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Internal server error",
-      data: null,
+      errors: "Something went wrong when creating user.",
     });
   }
 };
@@ -22,17 +25,20 @@ export const signin = async (req: Request, res: Response) => {
   try {
     const payload = req.body;
     const result = await authService.signin(payload);
+    const data = result.data
+      ? { data: result.data }
+      : { errors: result.errors };
     req.user = result.data?.user;
     res.status(result.status).json({
       success: result.success,
       message: result.message,
-      data: result.data || null,
+      ...data,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
       message: "Internal server error",
-      data: null,
+      errors: "Something went wrong when logging in.",
     });
   }
 };
