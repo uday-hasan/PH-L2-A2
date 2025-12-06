@@ -13,8 +13,9 @@ const addVehivle = async (payload: Record<string, unknown>) => {
       return {
         status: 400,
         success: false,
-        message:
+        errors:
           "Vehicle name, type, registration number, daily rent, status is required",
+        message: "All fields are required.",
       };
     }
     const {
@@ -28,7 +29,8 @@ const addVehivle = async (payload: Record<string, unknown>) => {
       return {
         status: 400,
         success: false,
-        message: "Vehicle type must be either car, bike, van or SUV",
+        errors: "Vehicle type must be either car, bike, van or SUV",
+        message: "Invalid vehicle type.",
       };
     }
     if (
@@ -37,14 +39,16 @@ const addVehivle = async (payload: Record<string, unknown>) => {
       return {
         status: 400,
         success: false,
-        message: "Vehicle status must be either available or booked",
+        errors: "Vehicle status must be either available or booked",
+        message: "Invalid vehicle availability status",
       };
     }
     if (isNaN(Number(daily_rent_price)) || Number(daily_rent_price) < 0) {
       return {
         status: 400,
         success: false,
-        message: "Daily rent price must be a number and greater than 0.",
+        errors: "Daily rent price must be a number and greater than 0.",
+        message: "Invalid daily rent type",
       };
     }
 
@@ -77,6 +81,7 @@ const addVehivle = async (payload: Record<string, unknown>) => {
       return {
         success: false,
         message: "This registration number already exists.",
+        errors: "Try another registration number",
         status: 400,
       };
     }
@@ -84,7 +89,7 @@ const addVehivle = async (payload: Record<string, unknown>) => {
       status: 500,
       success: false,
       message: "Internal server error",
-      data: null,
+      errors: "Failed to add vehicle",
     };
   }
 };
@@ -118,7 +123,7 @@ const getAllVehicle = async () => {
       status: 500,
       success: false,
       message: "Internal server error",
-      data: null,
+      errors: "Something went wrong when showing all vehicles",
     };
   }
 };
@@ -132,9 +137,10 @@ const getVehicle = async (vehicleId: number) => {
     );
     if (!result.rows.length) {
       return {
-        success: true,
+        success: false,
         message: "No vehicles found",
-        status: 200,
+        status: 404,
+        errors: "No vehicle found for id: " + vehicleId,
       };
     }
     return {
@@ -151,7 +157,7 @@ const getVehicle = async (vehicleId: number) => {
       status: 500,
       success: false,
       message: "Internal server error",
-      data: null,
+      errors: "Something went wrong when getting details of vehicle",
     };
   }
 };
@@ -180,7 +186,8 @@ const updateVehicle = async (
       return {
         status: 400,
         success: false,
-        message: "Vehicle type must be either car, bike, van or SUV",
+        errors: "Vehicle type must be either car, bike, van or SUV",
+        message: "Invalid vehicle type.",
       };
     }
     if (
@@ -190,7 +197,8 @@ const updateVehicle = async (
       return {
         status: 400,
         success: false,
-        message: "Vehicle status must be either available or booked",
+        errors: "Vehicle status must be either available or booked",
+        message: "Invalid vehicle status",
       };
     }
     if (
@@ -200,7 +208,8 @@ const updateVehicle = async (
       return {
         status: 400,
         success: false,
-        message: "Daily rent price must be a number and greater than 0.",
+        errors: "Daily rent price must be a number and greater than 0.",
+        message: "Invalid daily rent price",
       };
     }
 
@@ -221,7 +230,8 @@ const updateVehicle = async (
       return {
         status: 400,
         success: false,
-        message: "Failed to update",
+        errors: "Failed to update",
+        message: "Updatation faild",
       };
     }
     return {
@@ -237,15 +247,16 @@ const updateVehicle = async (
     ) {
       return {
         success: false,
-        message: "This registration number already exists.",
+        errors: "This registration number already exists.",
         status: 400,
+        message: "Provide another registration number",
       };
     }
     return {
       status: 500,
       success: false,
       message: "Internal server error",
-      data: null,
+      errors: "Something went wrong when updating vehicle",
     };
   }
 };
@@ -262,7 +273,8 @@ const deleteVehicle = async (vehicleId: number) => {
       return {
         status: 400,
         success: false,
-        message: "This vehicle has active booking.",
+        message: "Can't delete this vehicle.",
+        errors: "This vehicle has active booking.",
       };
     }
 
@@ -281,7 +293,8 @@ const deleteVehicle = async (vehicleId: number) => {
     } else {
       return {
         success: false,
-        message: "Vehicle not found",
+        message: "Unable to delete",
+        errors: "Vehicle not found",
         status: 400,
       };
     }
@@ -289,6 +302,7 @@ const deleteVehicle = async (vehicleId: number) => {
     return {
       success: false,
       message: "Internal server error",
+      errors: "Something went wrong when deleting",
       status: 500,
     };
   }

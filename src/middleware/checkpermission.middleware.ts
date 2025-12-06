@@ -26,13 +26,15 @@ export const checkPermission = (
       } else {
         return res.status(403).json({
           success: false,
-          message: "Forbidden: You don't have permission.",
+          message: "Forbidden",
+          errors: "You don't have permission.",
         });
       }
     } else {
       return res.status(403).json({
         success: false,
-        message: "Forbidden: You don't have permission.",
+        message: "Forbidden",
+        errors: "You don't have permission.",
       });
     }
   };

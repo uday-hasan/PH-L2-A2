@@ -15,6 +15,7 @@ export const authMiddleware = async (
       return res.status(401).json({
         success: false,
         message: "Invalid or no token",
+        errors: "You don't provide token or provided token is invalid",
       });
     }
 
@@ -30,6 +31,7 @@ export const authMiddleware = async (
         return res.status(401).json({
           success: false,
           message: "Unauthorized",
+          errors: "Session expire, login again.",
         });
       }
       req.user = result.rows[0];
@@ -38,13 +40,14 @@ export const authMiddleware = async (
       return res.status(401).json({
         success: false,
         message: "Invalid token",
+        errors: "You don't provide token or provided token is invalid",
       });
     }
   } catch (error) {
-    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Internal server error",
+      errors: "Something went wrong when accessing this resource.",
     });
   }
 };
