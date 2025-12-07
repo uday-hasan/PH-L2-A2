@@ -99,7 +99,7 @@ const getUser = async (userId: number) => {
     `,
     [userId]
   );
-
+  delete result.rows[0]?.password;
   return {
     success: true,
     status: 200,

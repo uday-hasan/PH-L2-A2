@@ -181,7 +181,7 @@ const updateVehicle = async (
 
     if (
       payload?.type &&
-      !VEHICLE_TYPE.includes(type as "car" | "bike" | "van" | "SUV")
+      !VEHICLE_TYPE.includes(payload?.type as "car" | "bike" | "van" | "SUV")
     ) {
       return {
         status: 400,
@@ -230,15 +230,18 @@ const updateVehicle = async (
       return {
         status: 400,
         success: false,
-        errors: "Failed to update",
         message: "Updatation faild",
+        errors: "Failed to update",
       };
     }
     return {
       status: 200,
       success: true,
       message: "Vehicle updated successfully",
-      data: result.rows[0],
+      data: {
+        ...result.rows[0],
+        daily_rent_price: Number(result.rows[0].daily_rent_price),
+      },
     };
   } catch (error: any) {
     if (
@@ -247,9 +250,9 @@ const updateVehicle = async (
     ) {
       return {
         success: false,
+        message: "Provide another registration number",
         errors: "This registration number already exists.",
         status: 400,
-        message: "Provide another registration number",
       };
     }
     return {

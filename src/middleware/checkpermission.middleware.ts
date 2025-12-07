@@ -15,7 +15,7 @@ export const checkPermission = (
       });
     }
     const isAdmin = user.role === "admin";
-    if (roles.includes(user?.role) || isAdmin) {
+    if (roles.includes(user?.role) && isAdmin) {
       return next();
     }
 
@@ -44,8 +44,16 @@ export const checkPermission = (
           errors: "No don't owe this booking",
         });
       }
-      if (Number(id) === Number(user.id)) {
-        return next();
+      if (requestFor === "user") {
+        if (Number(id) === Number(user.id)) {
+          return next();
+        } else {
+          return res.status(403).json({
+            success: false,
+            message: "Forbidden",
+            errors: "You don't have permission.",
+          });
+        }
       } else {
         return res.status(403).json({
           success: false,
