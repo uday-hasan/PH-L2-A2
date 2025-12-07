@@ -1,5 +1,10 @@
 import { Router } from "express";
-import { createBooking, getAllBooking } from "./booking.controller";
+import {
+  createBooking,
+  getAllBooking,
+  getBooking,
+  updateBooking,
+} from "./booking.controller";
 import { authMiddleware } from "../../middleware/auth.middleware";
 import { checkPermission } from "../../middleware/checkpermission.middleware";
 
@@ -7,12 +12,18 @@ const bookingRoute = Router();
 
 bookingRoute.post("/", authMiddleware, createBooking);
 bookingRoute.get("/", authMiddleware, getAllBooking);
+bookingRoute.get(
+  "/:bookingId",
+  authMiddleware,
+  checkPermission(["admin", "user"], "booking"),
+  getBooking
+);
 // bookingRoute.get("/:vehicleId", getVehicle);
 bookingRoute.put(
-  "/:vehicleId",
+  "/:bookingId",
   authMiddleware,
-  checkPermission(["admin"])
-  // updateVehicle
+  checkPermission(["admin", "user"], "booking"),
+  updateBooking
 );
 // bookingRoute.delete("/:userId", signin);
 

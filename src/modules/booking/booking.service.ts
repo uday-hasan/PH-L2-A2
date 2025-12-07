@@ -15,7 +15,9 @@ const createBooking = async (payload: Record<string, unknown>) => {
       return {
         status: 400,
         success: false,
-        message: "Customer id, vehicle id, rent start and end date is required",
+        message: "All fields are required.",
+        errors:
+          "Please provide customer_id, vehicle_id, rent_start_date and rent_end_date.",
       };
     }
     const { customer_id, vehicle_id, rent_start_date, rent_end_date } = payload;
@@ -27,7 +29,8 @@ const createBooking = async (payload: Record<string, unknown>) => {
       return {
         status: 400,
         success: false,
-        message: "Invalid date format. Use yyyy-mm-dd",
+        message: "Invalid date format.",
+        errors: `Please use 'yyyy-mm-dd' format`,
       };
     }
 
@@ -35,16 +38,36 @@ const createBooking = async (payload: Record<string, unknown>) => {
       return {
         status: 400,
         success: false,
-        message: "Rent start day must be earliar of end day",
+        message: "Invalid date range",
+        errors: "rent_start_date must be earliar than rent_end_date",
       };
+    }
+
+    const updateStatus = await pool.query(
+      `UPDATE Bookings SET status=$1 WHERE status=$2 AND rent_end_date < $3 RETURNING * `,
+      ["returned", "active", formatDate(new Date().toISOString())]
+    );
+
+    if (updateStatus.rows.length > 0) {
+      const vehicleListForUpdate = updateStatus.rows.map(
+        (item) => item.vehicle_id
+      );
+      const idsInOrFormat = vehicleListForUpdate.map(
+        (_, index) => `$${index + 2}`
+      );
+      await pool.query(
+        `UPDATE Vehicles SET availability_status=$1 WHERE id IN (${idsInOrFormat})`,
+        ["available", ...vehicleListForUpdate]
+      );
     }
 
     const getVehicle = await vehicleService.getVehicle(vehicle_id as number);
     if (!getVehicle.data) {
       return {
         status: getVehicle.status,
-        message: getVehicle.message,
         success: getVehicle.success,
+        message: getVehicle.message,
+        errors: getVehicle.errors,
       };
     }
 
@@ -53,7 +76,9 @@ const createBooking = async (payload: Record<string, unknown>) => {
       return {
         status: 400,
         success: false,
-        message: "This vehicle is already booked",
+        message: "Vehicle is not available",
+        errors:
+          "This vehicle is already booked, please choose another vehicle.",
       };
     }
 
@@ -96,7 +121,6 @@ const createBooking = async (payload: Record<string, unknown>) => {
       },
     };
   } catch (error: any) {
-    console.log(error);
     if (
       error.code === "23503" &&
       error.constraint === "bookings_customer_id_fkey"
@@ -105,19 +129,37 @@ const createBooking = async (payload: Record<string, unknown>) => {
         status: 404,
         success: false,
         message: "Customer not found",
+        errors: `Customer id: ${payload.customer_id || "N/A"} not found.`,
       };
     }
     return {
       status: 500,
       success: false,
       message: "Internal server error",
-      data: null,
+      errors: "Something went wrong while creating booking",
     };
   }
 };
 
 const getAllBooking = async (user: Record<string, unknown>) => {
   try {
+    const updateStatus = await pool.query(
+      `UPDATE Bookings SET status=$1 WHERE status=$2 AND rent_end_date < $3 RETURNING * `,
+      ["returned", "active", formatDate(new Date().toISOString())]
+    );
+
+    if (updateStatus.rows.length > 0) {
+      const vehicleListForUpdate = updateStatus.rows.map(
+        (item) => item.vehicle_id
+      );
+      const idsInOrFormat = vehicleListForUpdate
+        .map((_, index) => `$${index + 2}`)
+        .join(",");
+      await pool.query(
+        `UPDATE Vehicles SET availability_status=$1 WHERE id IN (${idsInOrFormat})`,
+        ["available", ...vehicleListForUpdate]
+      );
+    }
     const userId = user.id;
     const role = user.role;
     const vehicles = await vehicleService.getAllVehicle();
@@ -137,11 +179,13 @@ const getAllBooking = async (user: Record<string, unknown>) => {
         [userId]
       );
     }
-    console.log(result);
     if (!result.rows.length) {
       return {
         success: true,
-        message: "No booking found",
+        message:
+          role === "admin"
+            ? "No booking found"
+            : "You don't have any booking yet.",
         data: [],
         status: 200,
       };
@@ -209,141 +253,152 @@ const getAllBooking = async (user: Record<string, unknown>) => {
       status: 500,
       success: false,
       message: "Internal server error",
-      data: null,
+      errors: "Something went wrong while getting booking.",
     };
   }
 };
-const getVehicle = async (vehicleId: number) => {
+
+const getBooking = async (bookingId: number) => {
   try {
-    const result = await pool.query(
-      `
-        SELECT * FROM Vehicles where id=$1
-      `,
-      [vehicleId]
-    );
+    const result = await pool.query(`SELECT * FROM Bookings WHERE id=$1`, [
+      bookingId,
+    ]);
     if (!result.rows.length) {
       return {
+        status: 404,
+        success: false,
+        message: "No booking found",
+        errors: "No booking found for id: " + bookingId,
+      };
+    }
+    return {
+      status: 200,
+      success: true,
+      message: "Booking found",
+      data: result.rows[0],
+    };
+  } catch (error) {
+    return {
+      status: 500,
+      success: false,
+      message: "Internal server error",
+      errors: "Something went wrong while getting booking",
+    };
+  }
+};
+
+const updateBooking = async (
+  bookingId: number,
+  bookingStatus: "cancelled" | "returned",
+  role: string
+) => {
+  try {
+    if (!["cancelled", "returned"].includes(bookingStatus)) {
+      return {
+        status: 400,
+        success: false,
+        message: "Invalid status",
+        errors: "Status must be either cancelled or returned",
+      };
+    }
+    const existingBooking = await getBooking(bookingId);
+    if (!existingBooking.data) {
+      return {
+        success: existingBooking.success,
+        status: existingBooking.status,
+        message: existingBooking.message,
+        errors: existingBooking.errors,
+      };
+    }
+    if (existingBooking.data.status === "returned") {
+      return {
+        status: 400,
+        success: false,
+        message: "Can't update status of this booking.",
+        errors: "You can't update status because it's already returned",
+      };
+    }
+    if (bookingStatus === "returned" && role === "customer") {
+      return {
+        status: 400,
+        success: false,
+        message: "Forbidden",
+        errors: "Customers are not allowed to returned",
+      };
+    }
+    if (bookingStatus === existingBooking.data.status) {
+      return {
+        status: 400,
+        success: false,
+        message: "Unable to update status.",
+        errors: "This booking already " + bookingStatus,
+      };
+    }
+    const newResult = await pool.query(
+      `
+        UPDATE Bookings SET status = $1 WHERE id = $2 RETURNING *
+      `,
+      [bookingStatus, bookingId]
+    );
+    if (!newResult.rows.length) {
+      return {
+        status: 400,
+        success: false,
+        message: "Something went wrong",
+        errors: "Something went wrong while updating booking status.",
+      };
+    }
+    if (newResult.rows[0].status === "cancelled") {
+      return {
         success: true,
-        message: "No vehicles found",
+        message: "Booking cancelled successfully",
+        data: {
+          ...newResult.rows[0],
+          total_price: Number(newResult.rows[0].total_price),
+          rent_start_date: formatDate(newResult.rows[0].rent_start_date),
+          rent_end_date: formatDate(newResult.rows[0].rent_end_date),
+        },
         status: 200,
       };
     }
+    if (newResult.rows[0].status === "returned") {
+      const updatedVehicle = await pool.query(
+        `UPDATE Vehicles SET availability_status=$1 WHERE id=$2 RETURNING *`,
+        ["available", newResult.rows[0].vehicle_id]
+      );
+      return {
+        success: true,
+        message: "Booking marked as returned. Vehicle is now available",
+        status: 200,
+        data: {
+          ...newResult.rows[0],
+          rent_start_date: formatDate(newResult.rows[0].rent_start_date),
+          rent_end_date: formatDate(newResult.rows[0].rent_end_date),
+          total_price: Number(newResult.rows[0].total_price),
+          vehicle: {
+            availability_status: updatedVehicle.rows[0]?.availability_status,
+          },
+        },
+      };
+    }
     return {
-      success: true,
-      status: 200,
-      message: "Vehicles retrieved successfully",
-      data: {
-        ...result.rows[0],
-        daily_rent_price: Number(result.rows[0].daily_rent_price),
-      },
-    };
-  } catch (error: any) {
-    return {
-      status: 500,
       success: false,
+      status: 500,
       message: "Internal server error",
-      data: null,
+      errors: "Something went wrong while updating booking",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      status: 500,
+      message: "Internal server error",
+      errors: "Something went wrong while updating booking",
     };
   }
 };
-
-const updateVehicle = async (
-  payload: Record<string, unknown>,
-  vehicleId: number
-) => {
-  try {
-    const existing = await getVehicle(vehicleId);
-    if (!existing.data) {
-      return existing;
-    }
-    const {
-      vehicle_name,
-      type,
-      registration_number,
-      daily_rent_price,
-      availability_status,
-    } = existing.data;
-
-    if (
-      payload?.type &&
-      !VEHICLE_TYPE.includes(type as "car" | "bike" | "van" | "SUV")
-    ) {
-      return {
-        status: 400,
-        success: false,
-        message: "Vehicle type must be either car, bike, van or SUV",
-      };
-    }
-    if (
-      payload?.availability_status &&
-      !VEHICLE_STATUS.includes(availability_status as "available" | "booked")
-    ) {
-      return {
-        status: 400,
-        success: false,
-        message: "Vehicle status must be either available or booked",
-      };
-    }
-    if (
-      (payload?.daily_rent_price && isNaN(Number(payload?.daily_rent_price))) ||
-      Number(payload?.daily_rent_price) < 0
-    ) {
-      return {
-        status: 400,
-        success: false,
-        message: "Daily rent price must be a number and greater than 0.",
-      };
-    }
-
-    const result = await pool.query(
-      `
-        UPDATE Vehicles SET vehicle_name = $1, type = $2, registration_number = $3, daily_rent_price = $4, availability_status = $5 WHERE id = $6 RETURNING *
-      `,
-      [
-        payload?.vehicle_name || vehicle_name,
-        payload?.type || type,
-        payload?.registration_number || registration_number,
-        payload?.daily_rent_price || daily_rent_price,
-        payload?.availability_status || vehicle_name || availability_status,
-        vehicleId,
-      ]
-    );
-    if (!result.rows.length) {
-      return {
-        status: 400,
-        success: false,
-        message: "Failed to update",
-      };
-    }
-    return {
-      status: 200,
-      success: true,
-      message: "Vehicle updated successfully",
-      data: result.rows[0],
-    };
-  } catch (error: any) {
-    if (
-      error.code === "23505" &&
-      error.constraint === "vehicles_registration_number_key"
-    ) {
-      return {
-        success: false,
-        message: "This registration number already exists.",
-        status: 400,
-      };
-    }
-    return {
-      status: 500,
-      success: false,
-      message: "Internal server error",
-      data: null,
-    };
-  }
-};
-
 export const bookingService = {
   createBooking,
   getAllBooking,
-  getVehicle,
-  updateVehicle,
+  getBooking,
+  updateBooking,
 };

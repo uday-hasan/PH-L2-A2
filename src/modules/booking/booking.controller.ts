@@ -5,16 +5,13 @@ export const createBooking = async (req: Request, res: Response) => {
   try {
     const payload = req.body;
     const result = await bookingService.createBooking(payload);
-    res.status(result.status).json({
-      success: result.success,
-      message: result.message,
-      data: result.data || null,
-    });
+    const { status, ...rest } = result;
+    res.status(status).json(rest);
   } catch (error: any) {
     res.status(500).json({
       success: false,
       message: "Internal server error",
-      data: null,
+      errors: "Something went wrong while creating booking",
     });
   }
 };
@@ -23,10 +20,26 @@ export const getAllBooking = async (req: Request, res: Response) => {
   try {
     const payload = req.user;
     const result = await bookingService.getAllBooking(payload!);
-    res.status(result.status).json({
-      success: result.success,
-      message: result.message,
-      data: result.data || null,
+    const { status, ...rest } = result;
+    res.status(status).json(rest);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      errors: "Something went wrong while getting bookings.",
+    });
+  }
+};
+
+export const getBooking = async (req: Request, res: Response) => {
+  try {
+    const result = await bookingService.getBooking(
+      Number(req.params.bookingId!)
+    );
+    res.status(200).json({
+      success: "result.success",
+      message: "result.message",
+      data: result || null,
     });
   } catch (error) {
     res.status(500).json({
@@ -37,39 +50,23 @@ export const getAllBooking = async (req: Request, res: Response) => {
   }
 };
 
-// export const getVehicle = async (req: Request, res: Response) => {
-//   try {
-//     const vehicleId = Number(req.params.vehicleId);
-//     const result = await vehicleService.getVehicle(vehicleId);
-//     res.status(result.status).json({
-//       success: result.success,
-//       message: result.message,
-//       data: result.data || null,
-//     });
-//   } catch (error) {
-//     res.status(500).json({
-//       success: false,
-//       message: "Internal server error",
-//       data: null,
-//     });
-//   }
-// };
-// export const updateVehicle = async (req: Request, res: Response) => {
-//   try {
-//     const vehicleId = Number(req.params.vehicleId);
-//     const payload = req.body;
-//     const result = await vehicleService.updateVehicle(payload, vehicleId);
-//     res.status(result.status).json({
-//       success: result.success,
-//       message: result.message,
-//       data: result.data || null,
-//     });
-//   } catch (error) {
-//     console.log(error);
-//     res.status(500).json({
-//       success: false,
-//       message: "Internal server error",
-//       data: null,
-//     });
-//   }
-// };
+export const updateBooking = async (req: Request, res: Response) => {
+  try {
+    const newStatus = req.body?.status as "returned" | "cancelled";
+    const bookingId = req.params.bookingId;
+    const user = req.user;
+    const result = await bookingService.updateBooking(
+      Number(bookingId),
+      newStatus,
+      user?.role!
+    );
+    const { status, ...rest } = result;
+    res.status(status).json(rest);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      errors: "Something went wrong while updating booking.",
+    });
+  }
+};
